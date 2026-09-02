@@ -1,0 +1,224 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Mvorisek\Crobot;
+
+class GithubApi
+{
+    protected HttpUtil $httpUtil;
+
+    public function __construct()
+    {
+        $this->httpUtil = new HttpUtil();
+    }
+
+    public function decodeDt(string $v): \DateTime
+    {
+        $res = \DateTime::createFromFormat('Y-m-d\TH:i:s.vP', $v);
+        if ($res !== false) {
+            return $res;
+        }
+
+        return \DateTime::createFromFormat('Y-m-d\TH:i:sP', $v);
+    }
+
+    public function encodeDt(\DateTime $v): string
+    {
+        return (clone $v)->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.v\Z');
+    }
+
+    public function getElapsedSecondsFromNowAndDt(\DateTime $v): float
+    {
+        return microtime(true) - $v->getTimestamp();
+    }
+
+    /**
+     * @param array<mixed> $response
+     *
+     * @return array<mixed>
+     */
+    public function decodeDtRecursively(array $response): array
+    {
+        $res = $response;
+        foreach ($response as $k => $v) {
+            if (is_array($v)) {
+                $res[$k] = $this->decodeDtRecursively($v);
+            }
+
+            if (is_string($k) && str_ends_with($k, '_at')) {
+                $res[$k] = $this->decodeDt($v);
+            }
+        }
+
+        return $res;
+    }
+
+    public function logLine(string $v): void
+    {
+        echo $v . "\n";
+    }
+
+    /**
+     * @param 'get'|'put' $method
+     *
+     * @return array{int<100, 999>, array<string, mixed>}
+     */
+    public function sendRequest(string $method, string $url): ?array
+    {
+        preg_match('~^https://api.github.com/repos/([^/]+)/~', $url, $matches);
+        $repo = $matches[1];
+
+        $tokens = require __DIR__ . '/../github-token.php.local'; // @phpstan-ignore require.fileNotFound
+        $token = is_array($tokens)
+            ? $tokens[$repo]
+            : $tokens;
+
+        $this->logLine("\n" . '>>> ' . strtoupper($method) . ' ' . $url);
+
+        $res = $this->httpUtil->sendRequest($method, $url, [
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
+            'Accept' => 'application/vnd.github+json',
+            'Authorization' => 'Bearer ' . $token,
+            'X-GitHub-Api-Version' => '2026-03-10',
+        ]);
+
+        $this->logLine('    ' . $res[0]);
+
+        $json = $res[2] === ''
+            ? null
+            : json_decode($res[2], true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+
+        if ($res[0] >= 300) {
+            $this->logLine('    API message: ' . ($json['message'] ?? 'n/a'));
+        }
+
+        return [
+            $res[0],
+            $json,
+        ];
+    }
+
+    /**
+     * @param positive-int $maxCount
+     *
+     * @return list<array{id: string, created_at: \DateTime, ...<mixed>}> Newer runs are sorted last.
+     */
+    public function fetchAllUsingCreatedDtRange(string $url, string $listName, ?int $maxCount, ?\DateTime $minDt = null, ?\DateTime $maxDt = null): array
+    {
+        if ($maxCount === null) {
+            $maxCount = \PHP_INT_MAX;
+        }
+        if ($minDt === null) {
+            $minDt = new \DateTime('2020-01-01 00:00:00 UTC');
+        }
+        if ($maxDt === null) {
+            $maxDt = new \DateTime('now +2 days');
+        }
+
+        $maxPageCount = 100;
+
+        $urlSingle = $url;
+        $urlSingle .= str_contains($url, '?')
+            ? '&'
+            : '?';
+        $urlSingle .= 'per_page=' . $maxPageCount;
+        $urlSingle .= '&created=' . $this->encodeDt($minDt) . '..' . $this->encodeDt($maxDt);
+
+        $res = $this->sendRequest('get', $urlSingle);
+        assert($res[0] === 200);
+
+        $list = $res[1][$listName];
+
+        usort($list, function ($a, $b) {
+            $res = $this->decodeDt($a['created_at']) <=> $this->decodeDt($b['created_at']);
+
+            return $res !== 0
+                ? $res
+                : $a['id'] <=> $b['id'];
+        });
+
+        if (count($list) >= $maxPageCount) {
+            $middleDt = new \DateTime('@' . intdiv($minDt->getTimestamp() + $maxDt->getTimestamp(), 2));
+
+            $list = $this->fetchAllUsingCreatedDtRange($url, $listName, $maxCount, $middleDt, $maxDt);
+
+            if (count($list) < $maxCount) {
+                $list = [
+                    ...$this->fetchAllUsingCreatedDtRange($url, $listName, $maxCount, $minDt, $middleDt),
+                    ...$list,
+                ];
+
+                $list = array_values(array_combine(
+                    array_map(static fn ($v) => $v['id'], $list),
+                    $list
+                ));
+            }
+        }
+
+        $list = array_slice($list, -$maxCount);
+
+        return $list;
+    }
+
+    public function makeRepoApiUrl(string $repo): string
+    {
+        return 'https://api.github.com/repos/' . $repo;
+    }
+
+    /**
+     * @return array{created_at: \DateTime, updated_at: \DateTime, ...<mixed>}
+     */
+    public function fetchWorkflowDetails(string $repo, string $workflow): array
+    {
+        $res = $this->sendRequest('get', $this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow);
+        assert($res[0] === 200);
+
+        return $this->decodeDtRecursively($res[1]);
+    }
+
+    public function enableWorkflow(string $repo, string $workflow): void
+    {
+        $res = $this->sendRequest('put', $this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/enable');
+        assert($res[0] === 204);
+    }
+
+    public function disableWorkflow(string $repo, string $workflow): void
+    {
+        $res = $this->sendRequest('put', $this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/disable');
+        assert($res[0] === 204);
+    }
+
+    public function keepWorkflowEnabled(string $repo, string $workflow): void
+    {
+        $details = $this->fetchWorkflowDetails($repo, $workflow);
+
+        $isRecentlyUpdatedFx = fn ($details) => $this->getElapsedSecondsFromNowAndDt($details['updated_at']) < 3600 * 24 * 45;
+
+        if ($details['state'] === 'active' && !$isRecentlyUpdatedFx($details)) {
+            $this->disableWorkflow($repo, $workflow);
+
+            $details = $this->fetchWorkflowDetails($repo, $workflow);
+        }
+
+        if ($details['state'] === 'disabled_inactivity' || $details['state'] === 'disabled_manually') {
+            $this->enableWorkflow($repo, $workflow);
+
+            $details = $this->fetchWorkflowDetails($repo, $workflow);
+        }
+
+        assert($details['state'] === 'active' && $isRecentlyUpdatedFx($details));
+    }
+
+    /**
+     * @param positive-int $maxCount
+     *
+     * @return list<array<mixed>>
+     */
+    public function fetchLastWorkflowRuns(string $repo, string $workflow, ?string $branch, ?int $maxCount, ?\DateTime $minDt = null, ?\DateTime $maxDt = null): array
+    {
+        $res = $this->fetchAllUsingCreatedDtRange($this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/runs?branch=' . $branch, 'workflow_runs', $maxCount);
+
+        return $this->decodeDtRecursively($res);
+    }
+}
