@@ -139,13 +139,17 @@ class GithubApi
         });
 
         if (count($list) >= $maxPageCount) {
+            if (count($list) >= $maxCount) {
+                $minDt = $this->decodeDt($list[count($list) - $maxCount]['created_at']);
+            }
+
             $middleDt = new \DateTime('@' . intdiv($minDt->getTimestamp() + $maxDt->getTimestamp(), 2));
 
             $list = $this->fetchAllUsingCreatedDtRange($url, $listName, $maxCount, $middleDt, $maxDt);
 
             if (count($list) < $maxCount) {
                 $list = [
-                    ...$this->fetchAllUsingCreatedDtRange($url, $listName, $maxCount, $minDt, $middleDt),
+                    ...$this->fetchAllUsingCreatedDtRange($url, $listName, $maxCount - count($list), $minDt, $middleDt),
                     ...$list,
                 ];
 
