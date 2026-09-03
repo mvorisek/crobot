@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Mvorisek\Crobot;
+namespace Mvorisek\Crobot\Github;
+
+use Mvorisek\Crobot\HttpUtil;
 
 class GithubApi
 {
@@ -70,9 +72,9 @@ class GithubApi
         preg_match('~^https://api.github.com/repos/([^/]+)/~', $url, $matches);
         $repo = $matches[1];
 
-        $tokens = require __DIR__ . '/../github-token.php.local'; // @phpstan-ignore require.fileNotFound
+        $tokens = require __DIR__ . '/../../github-token.php.local'; // @phpstan-ignore require.fileNotFound
         $token = is_array($tokens)
-            ? $tokens[$repo]
+            ? $tokens[$repo] ?? $tokens['mvorisek']
             : $tokens;
 
         $this->logLine("\n" . '>>> ' . strtoupper($method) . ' ' . $url);

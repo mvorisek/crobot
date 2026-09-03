@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Mvorisek\Crobot\Tests;
 
 use Atk4\Core\Phpunit\TestCase;
-use Mvorisek\Crobot\GithubApi;
+use Mvorisek\Crobot\Github\GithubApi;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 class CronTest extends TestCase
