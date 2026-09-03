@@ -7,12 +7,13 @@ namespace Mvorisek\Crobot;
 class HttpUtil
 {
     /**
-     * @param 'get'|'put'           $method
-     * @param array<string, string> $headers
+     * @param 'get'|'put'|'post'                  $method
+     * @param array<string, string>               $headers
+     * @param ($method is 'post' ? string : null) $data
      *
      * @return array{int<100, 999>, array<string, string>, string, array<string, mixed>}
      */
-    public function sendRequest(string $method, string $url, array $headers): array
+    public function sendRequest(string $method, string $url, array $headers, ?string $data = null): array
     {
         $ch = curl_init();
         curl_setopt($ch, \CURLOPT_CUSTOMREQUEST, strtoupper($method));
@@ -22,6 +23,11 @@ class HttpUtil
         curl_setopt($ch, \CURLOPT_HEADER, true);
         curl_setopt($ch, \CURLINFO_HEADER_OUT, true);
         curl_setopt($ch, \CURLOPT_TIMEOUT, 30);
+
+        if ($data !== null) {
+            assert(strtolower($method) === 'post');
+            curl_setopt($ch, \CURLOPT_POSTFIELDS, $data);
+        }
 
         try {
             $response = curl_exec($ch);

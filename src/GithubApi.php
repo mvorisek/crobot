@@ -60,11 +60,12 @@ class GithubApi
     }
 
     /**
-     * @param 'get'|'put' $method
+     * @param 'get'|'put'|'post'                                $method
+     * @param ($method is 'post' ? array<string, mixed> : null) $data
      *
      * @return array{int<100, 999>, array<string, mixed>}
      */
-    public function sendRequest(string $method, string $url): ?array
+    public function sendRequest(string $method, string $url, ?array $data = null): ?array
     {
         preg_match('~^https://api.github.com/repos/([^/]+)/~', $url, $matches);
         $repo = $matches[1];
@@ -76,26 +77,31 @@ class GithubApi
 
         $this->logLine("\n" . '>>> ' . strtoupper($method) . ' ' . $url);
 
-        $res = $this->httpUtil->sendRequest($method, $url, [
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
-            'Accept' => 'application/vnd.github+json',
-            'Authorization' => 'Bearer ' . $token,
-            'X-GitHub-Api-Version' => '2026-03-10',
-        ]);
+        $response = $this->httpUtil->sendRequest(
+            $method,
+            $url,
+            [
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
+                'Accept' => 'application/vnd.github+json',
+                'Authorization' => 'Bearer ' . $token,
+                'X-GitHub-Api-Version' => '2026-03-10',
+            ],
+            $data !== null ? json_encode($data, \JSON_THROW_ON_ERROR, 512) : null
+        );
 
-        $this->logLine('    ' . $res[0]);
+        $this->logLine('    ' . $response[0]);
 
-        $json = $res[2] === ''
+        $responseData = $response[2] === ''
             ? null
-            : json_decode($res[2], true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+            : json_decode($response[2], true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
 
-        if ($res[0] >= 300) {
-            $this->logLine('    API message: ' . ($json['message'] ?? 'n/a'));
+        if ($response[0] >= 300) {
+            $this->logLine('    API message: ' . ($responseData['message'] ?? 'n/a'));
         }
 
         return [
-            $res[0],
-            $json,
+            $response[0],
+            $responseData,
         ];
     }
 
@@ -125,10 +131,10 @@ class GithubApi
         $urlSingle .= 'per_page=' . $maxPageCount;
         $urlSingle .= '&created=' . $this->encodeDt($minDt) . '..' . $this->encodeDt($maxDt);
 
-        $res = $this->sendRequest('get', $urlSingle);
-        assert($res[0] === 200);
+        $response = $this->sendRequest('get', $urlSingle);
+        assert($response[0] === 200);
 
-        $list = $res[1][$listName];
+        $list = $response[1][$listName];
 
         usort($list, function ($a, $b) {
             $res = $this->decodeDt($a['created_at']) <=> $this->decodeDt($b['created_at']);
