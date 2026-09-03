@@ -48,7 +48,7 @@ class GithubApi
                 $res[$k] = $this->decodeDtRecursively($v);
             }
 
-            if (is_string($k) && str_ends_with($k, '_at')) {
+            if (is_string($k) && str_ends_with($k, '_at') && $v !== null) {
                 $res[$k] = $this->decodeDt($v);
             }
         }
@@ -110,7 +110,7 @@ class GithubApi
     /**
      * @param positive-int $maxCount
      *
-     * @return list<array{id: string, created_at: \DateTime, ...<mixed>}> Newer runs are sorted last.
+     * @return list<array{id: string, created_at: \DateTime, ...<mixed>}> Newer items are sorted last
      */
     public function fetchAllUsingCreatedDtRange(string $url, string $listName, ?int $maxCount, ?\DateTime $minDt = null, ?\DateTime $maxDt = null): array
     {
@@ -183,22 +183,22 @@ class GithubApi
      */
     public function fetchWorkflowDetails(string $repo, string $workflow): array
     {
-        $res = $this->sendRequest('get', $this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow);
-        assert($res[0] === 200);
+        $response = $this->sendRequest('get', $this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow);
+        assert($response[0] === 200);
 
-        return $this->decodeDtRecursively($res[1]);
+        return $this->decodeDtRecursively($response[1]);
     }
 
     public function enableWorkflow(string $repo, string $workflow): void
     {
-        $res = $this->sendRequest('put', $this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/enable');
-        assert($res[0] === 204);
+        $response = $this->sendRequest('put', $this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/enable');
+        assert($response[0] === 204);
     }
 
     public function disableWorkflow(string $repo, string $workflow): void
     {
-        $res = $this->sendRequest('put', $this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/disable');
-        assert($res[0] === 204);
+        $response = $this->sendRequest('put', $this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/disable');
+        assert($response[0] === 204);
     }
 
     public function keepWorkflowEnabled(string $repo, string $workflow): void
@@ -225,12 +225,37 @@ class GithubApi
     /**
      * @param positive-int $maxCount
      *
-     * @return list<array<mixed>>
+     * @return list<array<mixed>> Newer runs are sorted last
      */
     public function fetchLastWorkflowRuns(string $repo, string $workflow, ?string $branch, ?int $maxCount, ?\DateTime $minDt = null, ?\DateTime $maxDt = null): array
     {
-        $res = $this->fetchAllUsingCreatedDtRange($this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/runs?branch=' . $branch, 'workflow_runs', $maxCount);
+        $response = $this->fetchAllUsingCreatedDtRange($this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/runs?branch=' . $branch, 'workflow_runs', $maxCount);
 
-        return $this->decodeDtRecursively($res);
+        return $this->decodeDtRecursively($response);
+    }
+
+    /**
+     * @param positive-int $maxCount
+     *
+     * @return array<string, array<mixed>> Newer commits are sorted last
+     */
+    public function listLastCommits(string $repo, string $sha, ?int $maxCount, ?\DateTime $minDt = null): array
+    {
+        if ($maxCount === null) {
+            $maxCount = \PHP_INT_MAX;
+        }
+
+        $response = $this->sendRequest('get', $this->makeRepoApiUrl($repo) . '/commits?sha=' . $sha . '&per_page=' . min($maxCount, 100) . ($minDt !== null ? '&since=' . $this->encodeDt($minDt) : ''));
+        assert($response[0] === 200);
+
+        $res = array_reverse($response[1]);
+        $res = array_combine(array_map(static fn ($v) => $v['sha'], $res), $res);
+        $res = $this->decodeDtRecursively($res);
+
+        if (count($res) < $maxCount && count($res) === 100) {
+            $res = $this->listLastCommits($repo, array_key_first($res), $maxCount - count($res) + 1, $minDt) + $res;
+        }
+
+        return $res;
     }
 }
