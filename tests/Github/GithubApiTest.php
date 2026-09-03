@@ -10,6 +10,31 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 class GithubApiTest extends TestCase
 {
+    public function testListBranches(): void
+    {
+        $githubApi = new GithubApi();
+
+        $res = $githubApi->listBranches('mvorisek/crobot');
+        self::assertArrayHasKey('main', $res);
+        self::assertIsString(array_key_first($res));
+
+        $res = $githubApi->listBranches('openclaw/openclaw');
+        self::assertGreaterThan(2_000, count($res));
+    }
+
+    public function testListTags(): void
+    {
+        $githubApi = new GithubApi();
+
+        $res = $githubApi->listTags('opentofu/manifesto');
+        self::assertSame([], $res);
+
+        $res = $githubApi->listTags('sebastianbergmann/phpunit');
+        self::assertArrayHasKey('13.3.2', $res);
+        self::assertIsString(array_key_first($res));
+        self::assertGreaterThan(1_000, count($res));
+    }
+
     /**
      * @dataProvider provideListLastCommitsCases
      *

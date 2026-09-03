@@ -235,6 +235,45 @@ class GithubApi
     }
 
     /**
+     * @param 'heads'|'tags' $filter
+     *
+     * @return array<string, string>
+     */
+    protected function listReferences(string $repo, string $filter): array
+    {
+        $response = $this->sendRequest('get', $this->makeRepoApiUrl($repo) . '/git/matching-refs/' . $filter);
+        assert($response[0] === 200);
+
+        $prefix = 'refs/' . $filter . '/';
+
+        return array_combine(
+            array_map(static function ($v) use ($prefix) {
+                $k = $v['ref'];
+                assert(str_starts_with($k, $prefix));
+
+                return substr($k, strlen($prefix));
+            }, $response[1]),
+            array_map(static fn ($v) => $v['object']['sha'], $response[1])
+        );
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function listBranches(string $repo): array
+    {
+        return $this->listReferences($repo, 'heads');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function listTags(string $repo): array
+    {
+        return $this->listReferences($repo, 'tags');
+    }
+
+    /**
      * @param positive-int $maxCount
      *
      * @return array<string, array<mixed>> Newer commits are sorted last
