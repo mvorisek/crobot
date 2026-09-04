@@ -36,12 +36,15 @@ class CronTest extends TestCase
      * @dataProvider provideGithubWorkflowIfLastRunIsNotTooOldCases
      */
     #[DataProvider('provideGithubWorkflowIfLastRunIsNotTooOldCases')]
-    public function testGithubWorkflowIfLastRunIsNotTooOld(string $repo, string $workflow, string $branch, float $maxElapsedHours = 6): void
+    public function testGithubWorkflowIfLastRunIsNotTooOld(string $repo, string $workflow, string $branch, float $maxElapsedHours = 6, float $maxRuntimeHours = 6): void
     {
         $githubApi = new GithubApi();
-        $runs = $githubApi->fetchLastWorkflowRuns($repo, $workflow, $branch, 1);
+        $runs = $githubApi->fetchLastWorkflowRuns($repo, $workflow, $branch, null, (new \DateTime('now -2 days'))->modify('-' . ceil($maxElapsedHours) . ' hours'));
 
-        self::assertLessThan($maxElapsedHours, $githubApi->getElapsedSecondsFromNowAndDt(array_last($runs)['created_at']) / 3600);
+        self::assertLessThan($maxElapsedHours, $githubApi->getElapsedSecondsFromNowAndDt(array_last($runs)['created_at']) / 3600, 'Last workflow not scheduled in time');
+
+        $runs = array_filter($runs, static fn ($v) => $v['status'] === 'completed');
+        self::assertLessThan($maxElapsedHours + $maxRuntimeHours, $githubApi->getElapsedSecondsFromNowAndDt(array_last($runs)['created_at']) / 3600, 'Last completed workflow is too old');
     }
 
     /**
@@ -49,7 +52,7 @@ class CronTest extends TestCase
      */
     public static function provideGithubWorkflowIfLastRunIsNotTooOldCases(): iterable
     {
-        yield ['mvorisek/crobot', 'test-unit.yml', 'main', 0.9];
+        yield ['mvorisek/crobot', 'test-unit.yml', 'main', 0.9, 0.5];
 
         yield ['mvorisek/image-php', 'ci.yml', 'master', 35 * 24];
 

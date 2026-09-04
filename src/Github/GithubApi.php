@@ -229,7 +229,7 @@ class GithubApi
      */
     public function fetchLastWorkflowRuns(string $repo, string $workflow, ?string $branch, ?int $maxCount, ?\DateTime $minDt = null, ?\DateTime $maxDt = null): array
     {
-        $response = $this->fetchAllUsingCreatedDtRange($this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/runs?branch=' . $branch, 'workflow_runs', $maxCount);
+        $response = $this->fetchAllUsingCreatedDtRange($this->makeRepoApiUrl($repo) . '/actions/workflows/' . $workflow . '/runs?branch=' . $branch, 'workflow_runs', $maxCount, $minDt, $maxDt);
 
         return $this->decodeDtRecursively($response);
     }
