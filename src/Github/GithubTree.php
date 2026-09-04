@@ -17,6 +17,16 @@ class GithubTree
         $this->sha = $sha;
     }
 
+    public function getApi(): GithubApi
+    {
+        return $this->api;
+    }
+
+    public function getRepo(): string
+    {
+        return $this->repo;
+    }
+
     public function getSha(): string
     {
         return $this->sha;
