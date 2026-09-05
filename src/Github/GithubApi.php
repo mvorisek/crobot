@@ -61,6 +61,36 @@ class GithubApi
         echo $v . "\n";
     }
 
+    public function makeRepoApiUrl(string $repo): string
+    {
+        return 'https://api.github.com/repos/' . $repo;
+    }
+
+    /**
+     * @return array{string, string, string, 'actions'|'contents'|null}
+     */
+    protected function explodeRequestUrl(string $url): array
+    {
+        $urlBaseLength = strlen($this->makeRepoApiUrl(''));
+        $ownerLength = strpos($url, '/', $urlBaseLength) - $urlBaseLength;
+        $repoLength = strpos($url, '/', $urlBaseLength + $ownerLength + 1) - ($urlBaseLength + $ownerLength + 1);
+
+        $owner = substr($url, $urlBaseLength, $ownerLength);
+        $repo = substr($url, $urlBaseLength + $ownerLength + 1, $repoLength);
+        $path = substr($url, $urlBaseLength + $ownerLength + $repoLength + 2);
+
+        // based on https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens?apiVersion=2026-03-10
+        if (str_starts_with($path, 'actions/')) {
+            $permission = 'actions';
+        } elseif (str_starts_with($path, 'git/') || str_starts_with($path, 'branches/') || str_starts_with($path, 'commits/')) {
+            $permission = 'contents';
+        } else {
+            $permission = null;
+        }
+
+        return [$owner, $repo, $path, $permission];
+    }
+
     /**
      * @param 'get'|'put'|'post'                                $method
      * @param ($method is 'post' ? array<string, mixed> : null) $data
@@ -69,13 +99,12 @@ class GithubApi
      */
     public function sendRequest(string $method, string $url, ?array $data = null): ?array
     {
-        preg_match('~^https://api.github.com/repos/([^/]+)/~', $url, $matches);
-        $repo = $matches[1];
+        [$urlOwner, $urlRepo, $urlPath, $urlPermission] = $this->explodeRequestUrl($url);
 
         $tokens = require __DIR__ . '/../../github-token.php.local'; // @phpstan-ignore require.fileNotFound
-        $token = is_array($tokens)
-            ? $tokens[$repo] ?? $tokens['mvorisek']
-            : $tokens;
+        $token = $tokens[$urlOwner . '/' . $urlRepo . ($urlPermission !== null ? '#' . $urlPermission : '')]
+            ?? $tokens[$urlOwner . ($urlPermission !== null ? '#' . $urlPermission : '')]
+            ?? array_first($tokens);
 
         $this->logLine("\n" . '>>> ' . strtoupper($method) . ' ' . $url);
 
@@ -171,11 +200,6 @@ class GithubApi
         $list = array_slice($list, -$maxCount);
 
         return $list;
-    }
-
-    public function makeRepoApiUrl(string $repo): string
-    {
-        return 'https://api.github.com/repos/' . $repo;
     }
 
     /**
