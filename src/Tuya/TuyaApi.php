@@ -32,7 +32,7 @@ class TuyaApi
     private function getCedentials(): array
     {
         if ($this->credentials === null) {
-            $this->credentials = require __DIR__ . '/../../tuya-credentials.php.local'; // @phpstan-ignore require.fileNotFound;
+            $this->credentials = require __DIR__ . '/../../tuya-credentials.php.local'; // @phpstan-ignore require.fileNotFound
         }
 
         return $this->credentials;
@@ -99,8 +99,8 @@ class TuyaApi
 
         $credentials = $this->getCedentials();
 
-        $body = $data !== null ?
-            json_encode($data, \JSON_THROW_ON_ERROR, 512)
+        $body = $data !== null
+            ? json_encode($data, \JSON_THROW_ON_ERROR, 512)
             : null;
 
         $url = 'https://' . $credentials['domain'] . $path;
@@ -172,7 +172,7 @@ class TuyaApi
     /**
      * @return array<string, mixed> https://developer.tuya.com/en/docs/cloud/1ef1a3044b?id=Kconf2usgnfwo
      *
-     * @deprecated This API can query up too 20 devices per request, but the response does not contain the last value updated time.
+     * @deprecated this API can query up too 20 devices per request, but the response does not contain the last value updated time
      */
     public function queryDevicePropertiesV1(string $deviceId): array
     {
@@ -215,7 +215,7 @@ class TuyaApi
     /**
      * @param array<string, scalar> $data
      *
-     * @return array<string, mixed> https://developer.tuya.com/en/docs/cloud/3ac29198c9?id=Kag2ybepz3arq
+     * @see https://developer.tuya.com/en/docs/cloud/3ac29198c9?id=Kag2ybepz3arq
      */
     public function queryDeviceSetProperties(string $deviceId, array $data): void
     {
