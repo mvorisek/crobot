@@ -95,9 +95,9 @@ class GithubApi
      * @param 'get'|'put'|'post'                                $method
      * @param ($method is 'post' ? array<string, mixed> : null) $data
      *
-     * @return array{int<100, 999>, array<string, mixed>}
+     * @return array{int<100, 999>, array<string, mixed>|null}
      */
-    public function sendRequest(string $method, string $url, ?array $data = null): ?array
+    public function sendRequest(string $method, string $url, ?array $data = null): array
     {
         [$urlOwner, $urlRepo, $urlPath, $urlPermission] = $this->explodeRequestUrl($url);
 
@@ -112,7 +112,6 @@ class GithubApi
             $method,
             $url,
             [
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
                 'Accept' => 'application/vnd.github+json',
                 'Authorization' => 'Bearer ' . $token,
                 'X-GitHub-Api-Version' => '2026-03-10',

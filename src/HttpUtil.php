@@ -15,6 +15,10 @@ class HttpUtil
      */
     public function sendRequest(string $method, string $url, array $headers, ?string $data = null): array
     {
+        $headers = array_merge([
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
+        ], $headers);
+        
         $ch = curl_init();
         curl_setopt($ch, \CURLOPT_CUSTOMREQUEST, strtoupper($method));
         curl_setopt($ch, \CURLOPT_URL, $url);
