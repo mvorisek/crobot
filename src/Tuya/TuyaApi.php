@@ -84,6 +84,14 @@ class TuyaApi
     }
 
     /**
+     * @return mixed
+     */
+    private function jsonDecode(string $json)
+    {
+        return json_decode($json, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+    }
+
+    /**
      * @param 'get'|'post'                                      $method
      * @param ($method is 'post' ? array<string, mixed> : null) $data
      *
@@ -130,7 +138,7 @@ class TuyaApi
 
         assert($response[0] === 200);
 
-        $responseData = json_decode($response[2], true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+        $responseData = $this->jsonDecode($response[2]);
 
         if (!$responseData['success']) {
             $this->logLine('    API code: ' . ($responseData['code'] ?? 'n/a'));
@@ -143,12 +151,12 @@ class TuyaApi
     }
 
     /* /**
-     * @return array<string, mixed> https://developer.tuya.com/en/docs/archived-documents/997abb41b9?id=Ka7kk116tsy0c
+     * @return array<string, xxx> https://developer.tuya.com/en/docs/archived-documents/997abb41b9?id=Ka7kk116tsy0c
      * /
     public function queryDeviceList(): array {} */
 
     /**
-     * @return array<string, mixed> https://developer.tuya.com/en/docs/cloud/3829469013?id=Kcp2l2v9wma0m (older: https://developer.tuya.com/en/docs/cloud/7d3f13ae55?id=Kb2rzcwpmvaci)
+     * @return array<string, scalar> https://developer.tuya.com/en/docs/cloud/3829469013?id=Kcp2l2v9wma0m (older: https://developer.tuya.com/en/docs/cloud/7d3f13ae55?id=Kb2rzcwpmvaci)
      */
     public function queryDeviceDetails(string $deviceId): array
     {
@@ -156,7 +164,7 @@ class TuyaApi
     }
 
     /**
-     * @return array<string, mixed> https://developer.tuya.com/en/docs/cloud/2287954993?id=Kdqf1hiwhdc7f
+     * @return array{eventTime: 0}|array{eventTime: int, indicatorType: string, signalLevel: string, signal: int} https://developer.tuya.com/en/docs/cloud/2287954993?id=Kdqf1hiwhdc7f
      */
     public function queryDeviceSignalStrength(string $deviceId): array
     {
@@ -170,7 +178,7 @@ class TuyaApi
     }
 
     /**
-     * @return array<string, mixed> https://developer.tuya.com/en/docs/cloud/1ef1a3044b?id=Kconf2usgnfwo
+     * @return array<string, scalar> https://developer.tuya.com/en/docs/cloud/1ef1a3044b?id=Kconf2usgnfwo
      *
      * @deprecated this API can query up too 20 devices per request, but the response does not contain the last value updated time
      */
@@ -185,7 +193,7 @@ class TuyaApi
     }
 
     /**
-     * @return array<string, mixed> https://developer.tuya.com/en/docs/cloud/116cc8bf6f?id=Kcp2kwfrpe719
+     * @return array<string, array{custom_name: string, dp_id: int, time: int, type: string, value: scalar}> https://developer.tuya.com/en/docs/cloud/116cc8bf6f?id=Kcp2kwfrpe719
      */
     public function queryDeviceProperties(string $deviceId): array
     {
@@ -198,7 +206,7 @@ class TuyaApi
     }
 
     /**
-     * @return array{category: string, functions: array<string, mixed>} https://developer.tuya.com/en/docs/cloud/3ac29198c9?id=Kag2ybepz3arq
+     * @return array{category: string, functions: array{type: string, values: array<string, scalar|list<string>>}} https://developer.tuya.com/en/docs/cloud/3ac29198c9?id=Kag2ybepz3arq
      */
     public function queryDeviceFunctions(string $deviceId): array
     {
@@ -206,7 +214,11 @@ class TuyaApi
 
         $response['functions'] = array_combine(
             array_map(static fn ($v) => $v['code'], $response['functions']),
-            array_map(static fn ($v) => array_diff_key($v, ['code' => true, 'desc' => true, 'name' => true]), $response['functions'])
+            array_map(function ($v) {
+                $v['values'] = $this->jsonDecode($v['values']);
+
+                return array_diff_key($v, ['code' => true, 'desc' => true, 'name' => true]);
+            }, $response['functions'])
         );
 
         return $response;
@@ -215,9 +227,9 @@ class TuyaApi
     /**
      * @param array<string, scalar> $data
      *
-     * @see https://developer.tuya.com/en/docs/cloud/3ac29198c9?id=Kag2ybepz3arq
+     * @see https://developer.tuya.com/en/docs/cloud/c057ad5cfd?id=Kcp2kxdzftp91
      */
-    public function queryDeviceSetProperties(string $deviceId, array $data): void
+    public function setDeviceProperties(string $deviceId, array $data): void
     {
         $this->sendRequest('post', '/v2.0/cloud/thing/' . $deviceId . '/shadow/properties/issue', ['properties' => $data]);
     }
