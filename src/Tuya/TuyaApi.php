@@ -41,7 +41,7 @@ class TuyaApi
     /**
      * @param 'get'|'post' $method
      */
-    public function signRequest(string $method, string $path, int $timestampMs, string $body): string
+    protected function signRequest(string $method, string $path, int $timestampMs, string $body): string
     {
         $credentials = $this->getCedentials();
 
