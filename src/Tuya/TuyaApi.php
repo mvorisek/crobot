@@ -124,7 +124,7 @@ class TuyaApi
                 [
                     'Accept' => 'application/json',
                     'client_id' => $credentials['accessKey'],
-                    't' => $timestampMs,
+                    't' => (string) $timestampMs,
                     'sign' => $signature,
                     'sign_method' => 'HMAC-SHA256',
                 ],
