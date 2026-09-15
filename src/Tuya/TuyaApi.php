@@ -206,13 +206,13 @@ class TuyaApi
     }
 
     /**
-     * @return array{category: string, functions: array{type: string, values: array<string, scalar|list<string>>}} https://developer.tuya.com/en/docs/cloud/3ac29198c9?id=Kag2ybepz3arq
+     * @return array{type: string, values: array<string, scalar|list<string>>} https://developer.tuya.com/en/docs/cloud/3ac29198c9?id=Kag2ybepz3arq
      */
     public function queryDeviceFunctions(string $deviceId): array
     {
         $response = $this->sendRequest('get', '/v1.0/iot-03/devices/' . $deviceId . '/functions');
 
-        $response['functions'] = array_combine(
+        return array_combine( // @phpstan-ignore return.type
             array_map(static fn ($v) => $v['code'], $response['functions']),
             array_map(function ($v) {
                 $v['values'] = $this->jsonDecode($v['values']);
@@ -220,17 +220,17 @@ class TuyaApi
                 return array_diff_key($v, ['code' => true, 'desc' => true, 'name' => true]);
             }, $response['functions'])
         );
-
-        return $response; // @phpstan-ignore return.type
     }
 
     /**
      * @param array<string, scalar> $data
      *
-     * @see https://developer.tuya.com/en/docs/cloud/c057ad5cfd?id=Kcp2kxdzftp91
+     * @see https://developer.tuya.com/en/docs/cloud/e2512fb901?id=Kag2yag3tiqn5
      */
-    public function setDeviceProperties(string $deviceId, array $data): void
+    public function sendCommand(string $deviceId, array $data): void
     {
-        $this->sendRequest('post', '/v2.0/cloud/thing/' . $deviceId . '/shadow/properties/issue', ['properties' => $data]);
+        $this->sendRequest('post', '/v1.0/iot-03/devices/' . $deviceId . '/commands', [
+            'commands' => array_map(static fn ($k, $v) => ['code' => $k, 'value' => $v], array_keys($data), $data),
+        ]);
     }
 }
