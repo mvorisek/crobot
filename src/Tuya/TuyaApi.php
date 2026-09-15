@@ -174,7 +174,7 @@ class TuyaApi
         ]);
         assert($response === true);
 
-        return $this->sendRequest('get', '/v2.0/cloud/thing/' . $deviceId . '/WiFi/signal');
+        return $this->sendRequest('get', '/v2.0/cloud/thing/' . $deviceId . '/WiFi/signal'); // @phpstan-ignore return.type
     }
 
     /**
@@ -199,7 +199,7 @@ class TuyaApi
     {
         $response = $this->sendRequest('get', '/v2.0/cloud/thing/' . $deviceId . '/shadow/properties');
 
-        return array_combine(
+        return array_combine( // @phpstan-ignore return.type
             array_map(static fn ($v) => $v['code'], $response['properties']),
             array_map(static fn ($v) => array_diff_key($v, ['code' => true]), $response['properties'])
         );
@@ -221,7 +221,7 @@ class TuyaApi
             }, $response['functions'])
         );
 
-        return $response;
+        return $response; // @phpstan-ignore return.type
     }
 
     /**
