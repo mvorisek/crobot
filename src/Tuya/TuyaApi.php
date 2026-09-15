@@ -35,7 +35,7 @@ class TuyaApi
             $this->credentials = require __DIR__ . '/../../tuya-credentials.php.local'; // @phpstan-ignore require.fileNotFound
         }
 
-        return $this->credentials;
+        return $this->credentials; // @phpstan-ignore return.type
     }
 
     /**
