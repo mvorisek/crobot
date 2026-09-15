@@ -33,7 +33,7 @@ class TuyaApiTest extends TestCase
         self::assertSame(['type' => 'Enum', 'values' => ['range' => ['power_off', 'power_on', 'last']]], $res['relay_status']);
 
         // test write - sadly it is not synchronous
-        if (false) {
+        if (false) { // @phpstan-ignore if.alwaysFalse
             $tuyaApi->sendCommand($deviceIdSwitch, ['relay_status' => 'power_off']);
             $res = $tuyaApi->queryDeviceProperties($deviceIdSwitch);
             self::assertSame('off', $res['relay_status']['value']);

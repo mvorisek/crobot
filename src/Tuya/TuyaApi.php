@@ -206,7 +206,7 @@ class TuyaApi
     }
 
     /**
-     * @return array{type: string, values: array<string, scalar|list<string>>} https://developer.tuya.com/en/docs/cloud/3ac29198c9?id=Kag2ybepz3arq
+     * @return array<string, array{type: string, values: array<string, scalar|list<string>>}> https://developer.tuya.com/en/docs/cloud/3ac29198c9?id=Kag2ybepz3arq
      */
     public function queryDeviceFunctions(string $deviceId): array
     {
