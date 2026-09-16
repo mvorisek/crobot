@@ -52,7 +52,7 @@ class CronTest extends TestCase
      */
     public static function provideGithubWorkflowIfLastRunIsNotTooOldCases(): iterable
     {
-        yield ['mvorisek/crobot', 'test-unit.yml', 'main'];
+        yield ['mvorisek/crobot', 'test-unit.yml', 'main', 12 /* run less frequently with GitHub free account */];
         yield ['mvorisek/crobot', 'cron.yml', 'main', 0.4, 0.5];
 
         yield ['mvorisek/image-php', 'ci.yml', 'master', 35 * 24];
