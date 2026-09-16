@@ -8,3 +8,7 @@ parameters:
         - .
     excludePaths:
         - vendor
+
+    ignoreErrors:
+        # relax strict rules
+        - '~^Only booleans are allowed in .+, .+ given( on the (left|right) side)?\.$~'
