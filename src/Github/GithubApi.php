@@ -237,6 +237,7 @@ class GithubApi
         }
 
         if ($details['state'] === 'disabled_inactivity' || $details['state'] === 'disabled_manually') {
+            sleep(2); // too fast workflow reenable does not keep GitHub Actions "cron" enabled
             $this->enableWorkflow($repo, $workflow);
 
             $details = $this->fetchWorkflowDetails($repo, $workflow);
