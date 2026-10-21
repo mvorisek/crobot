@@ -199,13 +199,30 @@ class TuyaApi
      */
     public function queryDeviceSignalStrength(string $deviceId): array
     {
+        // OBSERVATION: after issuing the signal detection request the signal strength is typically
+        // available after about 400 ms for the next 70 minutes
+
         $response = $this->sendRequest('post', '/v2.0/cloud/thing/signal/detection/issue', [
             'device_id' => $deviceId,
             'device_type' => 'WiFi',
         ]);
         assert($response === true);
 
-        return $this->sendRequest('get', '/v2.0/cloud/thing/' . $deviceId . '/WiFi/signal'); // @phpstan-ignore return.type
+        $startTs = microtime(true);
+        for ($i = 0;; ++$i) {
+            $response = $this->sendRequest('get', '/v2.0/cloud/thing/' . $deviceId . '/WiFi/signal');
+            if (isset($response['signal'])) {
+                return $response; // @phpstan-ignore return.type
+            }
+
+            $sleepSeconds = 0.5 * (1.5 ** $i);
+
+            if (microtime(true) - $startTs > 30 - $sleepSeconds) {
+                throw new \Exception('Reading WiFi signal strength timeout');
+            }
+
+            usleep((int) round($sleepSeconds * 1_000_000));
+        }
     }
 
     /**
