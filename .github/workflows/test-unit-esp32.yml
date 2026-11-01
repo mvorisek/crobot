@@ -15,20 +15,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v6
-        env:
-          DOCKER_BUILD_SUMMARY: false
-          DOCKER_BUILD_RECORD_UPLOAD: false
+      - name: esp-idf build
+        uses: espressif/esp-idf-ci-action@main
         with:
-          context: esp32
-          tags: app:latest
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          esp_idf_version: v3.3.1
+          path: esp32
 
       - name: Run image
         run: |
