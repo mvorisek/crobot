@@ -15,16 +15,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: esp-idf build
+      - name: Build firmware
         uses: espressif/esp-idf-ci-action@main
         with:
-          esp_idf_version: v3.3.1
+          # based on https://github.com/espressif/esp-idf/blob/v6.0.3/tools/docker/Dockerfile
+          esp_idf_docker_image: espressif/idf
+          esp_idf_version: v6.0.3
           path: esp32
-
-      - name: Run image
-        run: |
-          cd esp32
-          docker run --rm app apt -v
+          target: esp32
+          command: idf.py build
 
   cs:
     name: EPS32 CS
