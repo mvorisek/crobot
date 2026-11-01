@@ -7,3 +7,4 @@ RUN echo "deb [trusted=yes] https://dl.espressif.com/dl/eim/apt/ stable main" > 
 RUN apt-get -y update
 RUN apt-get -y install eim-cli
 RUN eim install
+RUN echo 55
