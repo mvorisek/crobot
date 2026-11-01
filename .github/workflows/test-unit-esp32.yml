@@ -25,7 +25,8 @@ jobs:
           DOCKER_BUILD_RECORD_UPLOAD: false
         with:
           context: esp32
-          tags: app
+          tags: app:latest
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
