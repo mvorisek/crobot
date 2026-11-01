@@ -11,9 +11,15 @@ jobs:
   unit-test:
     name: EPS32 Unit
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: true
 
       - name: Build firmware
         uses: espressif/esp-idf-ci-action@main
@@ -24,6 +30,9 @@ jobs:
           path: esp32
           target: esp32
           command: idf.py build
+
+
+      - uses: stefanzweifel/git-auto-commit-action@v7
 
   cs:
     name: EPS32 CS
