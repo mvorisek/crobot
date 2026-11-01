@@ -18,10 +18,13 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Build image
-        run: |
-          cd esp32
-          docker buildx build --cache-from type=gha --cache-to type=gha,mode=max -t app --load .
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: esp32
+          tags: app
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Run image
         run: |
