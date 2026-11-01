@@ -1,0 +1,41 @@
+name: Unit ESP32
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '0 0/2 * * *'
+  workflow_dispatch:
+
+jobs:
+  unit-test:
+    name: Unit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        run: |
+          cd esp32
+          docker buildx build --cache-from=type=sha --cache-to=rype=gha,mode=max -t app --load .
+
+      - name: Run image
+        run: |
+          cd esp32
+          docker run --rm app npm test
+
+  cs:
+    name: CS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run clang-format
+        uses: jidicula/clang-format-action@v4
+        with:
+          check-path: 'esp32'
