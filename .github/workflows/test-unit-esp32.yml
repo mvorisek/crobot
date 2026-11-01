@@ -29,7 +29,8 @@ jobs:
       - name: Build Docker image
         run: |
           cd esp32
-          docker buildx build --cache-from type=local,src=${{ runner.temp }}/.buildx-cache --cache-to type=local,dest=${{ runner.temp }}/.buildx-cache,mode=max,reset=true --tag app:latest --output type=docker,tar=false,compression=uncompressed,force-compression=true .
+          docker buildx build --cache-from type=local,src=${{ runner.temp }}/.buildx-cache --cache-to type=local,dest=${{ runner.temp }}/.buildx-cache,mode=max,reset=true --tag app:latest --output type=docker,dest=test,context=test2,tar=false,compression=uncompressed,force-compression=true .
+          ls -lah
 
       - name: Run image
         run: |
