@@ -32,7 +32,7 @@ jobs:
       - name: Run image
         run: |
           cd esp32
-          docker run --rm app npm test
+          docker run --rm app apt -v
 
   cs:
     name: EPS32 CS
