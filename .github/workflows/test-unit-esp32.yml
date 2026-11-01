@@ -21,7 +21,7 @@ jobs:
       - name: Build image
         run: |
           cd esp32
-          docker buildx build --cache-from=type=sha --cache-to=rype=gha,mode=max -t app --load .
+          docker buildx build --cache-from=type=sha --cache-to=type=gha,mode=max -t app --load .
 
       - name: Run image
         run: |
