@@ -1,0 +1,13 @@
+services:
+  xx:
+    image: alpine:latest
+    restart: always
+    command:
+      - sh
+      - -c
+      - |
+        echo a
+        echo b'ů'b2
+        date +%s
+        sleep 100000
+

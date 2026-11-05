@@ -1,0 +1,32 @@
+services:
+  traefik:
+    image: traefik:latest
+    restart: always
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web80.address=:80
+    ports:
+      - 80:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  web_a:
+    image: nginx
+    restart: always
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.web_a.loadbalancer.server.port=80
+      - traefik.http.routers.web_a.entrypoints=web80
+      - traefik.http.routers.web_a.rule=PathPrefix(`/y/`)
+
+  web_b:
+    image: hashicorp/http-echo
+    restart: always
+    command:
+      - -text=hello B
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.web_b.loadbalancer.server.port=5678
+      - traefik.http.routers.web_b.entrypoints=web80
+      - traefik.http.routers.web_b.rule=Host(`debug-957.rostiapp.cz`) && PathPrefix(`/x/`)

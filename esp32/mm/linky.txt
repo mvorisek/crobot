@@ -1,0 +1,12 @@
+https://github.com/espressif/esp-emulator
+
+https://mischianti.org/esp32-self-ota-update-firmware-from-server-1/
+
+https://blog.gistre.epita.fr/posts/brice.parent-2023-09-11-introduction_to_testing_esp32_code_with_pytest/
+
+https://randomnerdtutorials.com/esp32-esp8266-micropython-ota-updates/
+
+https://github.com/orgs/micropython/discussions/12751
+
+
+https://www.youtube.com/watch?v=llA2mdCh7Kc

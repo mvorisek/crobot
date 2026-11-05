@@ -1,0 +1,75 @@
+services:
+  xx:
+    image: alpine:latest
+    restart: always
+    command:
+      - sh
+      - -c
+      - |
+        echo a
+        echo b'ů'b2
+        date +%s
+        sleep 100000
+
+  yy:
+    image: alpine:latest
+    restart: always
+    command:
+      - sh
+      - -c
+      - |
+        echo a
+        echo b'ů'b2
+        date +%s
+        ping -c 2 google.cz
+
+
+
+  zzzz:
+    restart: always
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM alpine
+        RUN apk upgrade --no-cache
+        RUN apk add nano
+        RUN echo 5
+    command:
+      - sh
+      - -c
+      - |
+        echo x
+
+
+
+  dind:
+    image: docker:dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=
+    command: --tls=false
+    volumes:
+      - dind-storage:/var/lib/docker
+
+  client:
+    image: docker:latest
+    environment:
+      - DOCKER_HOST=tcp://dind:2375
+    depends_on:
+      - dind
+    command: docker run --rm alpine sh -c "while echo 'w2'; ping -c 2 google.cz; sleep 5; do :; done"
+
+
+volumes:
+  dind-storage:
+  
+  
+  
+# jak benchmarkovat VPS https://rscomputers-ks.com/vps-benchmark-test-commands/
+# https://www.clouvider.com/vps/ VPS s velkou RAM za dobrou cenu
+
+
+
+https://doc.traefik.io/traefik/getting-started/docker/#using-docker-compose
+https://docs.rosti.cz/cs/stacks/traefik/#webova-aplikace-na-subpath
+

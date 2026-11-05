@@ -21,6 +21,7 @@ jobs:
         with:
           persist-credentials: true
 
+      # docs: https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/tools/idf-docker-image.html
       - name: Build firmware
         uses: espressif/esp-idf-ci-action@main
         with:

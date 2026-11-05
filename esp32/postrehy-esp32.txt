@@ -1,0 +1,30 @@
+
+# create venv + pip install esptool
+
+# upload compiled file using GHA
+esptool.py --port /dev/ttyUSB0 erase-flash
+esptool.py --port /dev/ttyUSB0 write-flash --flash-mode dio --flash-freq 40m --flash-size 2MB 0x10000 /tmp/hello_world.bin
+
+# upload micro python binary
+esptool.py --port /dev/ttyUSB0 erase-flash
+esptool.py --port /dev/ttyUSB0 write-flash --flash-mode dio --flash-freq 40m --flash-size 2MB 0x1000 ESP32_GENERIC-20260824-v1.29.0.bin
+
+ampy --port /dev/ttyUSB0 ls
+ampy --port /dev/ttyUSB0 get boot.py
+# více na https://pypi.org/project/adafruit-ampy/
+# taky existuje mpremote, ale nezkoušeno (narozdíl od ampy)
+
+# ESP8266 je zastaralé (pomalé single core, no BT, no DAC, pouze jeden plnohodnotný UART, no HW PWM, no HW ethernat MAC), "ESP32" je ideál, má i 2xDAC
+# ESP32-Sx a ESP32-Cx se nazdají lepší, mají třeba méně RAM, no HW ethernet MAC, no DAC,
+# u "ESP32" si je však nutné pohlídat, aby mělo alespoň 4 MB flash, dle specifikace se mohou prodávat i jen s 2 MB
+# RP2040 je pomalejší, méně RAM, nemá ethernet/Wifi a nemá flash
+
+
+# netestováno https://github.com/espressif/idf-ci
+# může se ale ještě rychleji stahovat než "espressif/idf" docker
+
+
+# Arduino vs Lua vs MicroPython
+# arduino se musí kompilovat, Lua alespoň pro ESP32 je s popularitou/podporou na ústupu, MicroPython jasně vede s 10x náskokem
+
+# alternativa Tuya je open Tasmota s celkem velkou popularitou
