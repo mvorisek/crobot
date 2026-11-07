@@ -17,14 +17,29 @@ jobs:
 
       - name: Build firmware
         run: |
-          # manual: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-docker-image.html
+          # manual: https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/build-system.html
           # docker image source: https://github.com/espressif/esp-idf/blob/v6.1/tools/docker/Dockerfile
+          # https://github.com/espressif/esp-emulator#building-firmware-images
+          # "merge-bin" implies "build" command, merged fw is needed for the emulator
           docker run --rm \
               -v "$(git rev-parse --show-toplevel)/esp32/fw-hello-world":/h \
               -w /h \
-              -e IDF_TARGET=esp32 \
+              -e IDF_TARGET=esp32s3 \
               docker.io/espressif/idf:v6.1 \
-              idf.py build
+              idf.py merge-bin
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v7
+        with:
+          name: fw
+          path: |
+            esp32/fw-hello-world/build/*
+            !esp32/fw-hello-world/build/*/*
+            !esp32/fw-hello-world/build/build.ninja
+            !esp32/fw-hello-world/build/compile_commands.json
+            !esp32/fw-hello-world/build/hello_world.elf
+            !esp32/fw-hello-world/build/hello_world.map
+            !esp32/fw-hello-world/build/x509_crt_bundle.S
 
   cs:
     name: EPS32 CS
