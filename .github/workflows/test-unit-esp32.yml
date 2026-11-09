@@ -15,6 +15,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Run ESP emulator with deploy.py
+        run: |
+          cd esp32/fw-deploy
+          BUILDKIT_PROGRESS=plain docker build .
+
   cs:
     name: EPS32 CS
     if: false # we need solution with autofix for start
