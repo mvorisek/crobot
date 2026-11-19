@@ -1,21 +1,21 @@
-FROM debian:stable-slim
+FROM docker.io/espressif/idf:v5.5.4
 WORKDIR /usr/local/app
 
 RUN apt-get update && apt-get -y upgrade \
-    && apt-get -y install curl python3-venv
+    && apt-get -y install expect
 
-RUN curl -fsSL https://raw.githubusercontent.com/espressif/esp-emulator/main/install.sh | sh -s -- --version 1.0.0-rc2
+ENV IDF_PATH_FORCE=1
 
-RUN python3 -m venv .venv
-RUN . .venv/bin/activate && pip install mpremote
+RUN git clone --branch v1.29.0 --depth 1 https://github.com/micropython/micropython.git
+WORKDIR /usr/local/app/micropython
 
-RUN curl -fsSL -o fw-micropython-esp32s3.bin https://micropython.org/resources/firmware/ESP32_GENERIC_S3-20260824-v1.29.0.bin
+# https://github.com/micropython/micropython/blob/v1.29.0/ports/esp32/README.md#building-the-firmware
+RUN make -C mpy-cross
+WORKDIR /usr/local/app/micropython/ports/esp32
+RUN . /opt/esp/idf/export.sh && make submodules
+RUN . /opt/esp/idf/export.sh && make BOARD=ESP32_GENERIC BOARD_VARIANT=""
 
 # never cache build since this line
 ADD "https://www.random.org/cgi-bin/randbyte?nbytes=64&format=h" skipcache
 
-COPY deploy.py .
-
-RUN ~/.local/bin/esp-emu --chip esp32s3 --firmware fw-micropython-esp32s3.bin --uart-tcp 127.0.0.1:5555 --timeout 5s \
-        --inject-on '>>> ' --inject 'print("hello")\n' --exit-on '__my_done__' & \
-    . .venv/bin/activate && sleep 1 && mpremote connect socket://127.0.0.1:5555 + run deploy.py
+RUN . /opt/esp/idf/export.sh && expect -c 'set timeout 60; spawn make qemu; expect ">>>"; send "print(1+1)\r"; expect ">>>"; sleep 300'
