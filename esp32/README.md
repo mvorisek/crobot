@@ -1,3 +1,21 @@
+# Upload MicroPython
+
+Linux: create venv + `pip install esptool` first. (TODO why, why not using apt?)
+
+Windows: download prebuilt exe from https://github.com/espressif/esptool/releases/tag/v5.6.0
+
+```
+esptool.py --port /dev/ttyUSB0 erase-flash
+esptool.py write-flash 0x10000 /tmp/hello_world.bin
+esptool.py --port COM4 write-flash 0x1000 ESP32_GENERIC-20260824-v1.29.0.bin
+```
+
+`ESP32-ETH01` needs `IO0` and `GNG` shorted for flashing.
+
+# Upload deploy script into newly installed MicroPython
+
+`mpremote` is official MicroPython tool, has more reliable data transfer (according to Gemini) and is already more popular then `ampy`.
+
 # Docker build with cache
 
 Buildx with local cache (`--cache-from type=local`) and `actions/cache` is much faster than with native GHA cache `--cache-from type=sha`, example:
@@ -23,21 +41,6 @@ Buildx with local cache (`--cache-from type=local`) and `actions/cache` is much 
           --tag app:latest --load .
 ```
 
-# Upload MicroPython
-
-Create venv + `pip install esptool` first.
-
-```
-esptool.py --port /dev/ttyUSB0 erase-flash
-esptool.py --port /dev/ttyUSB0 write-flash --flash-mode dio --flash-freq 40m --flash-size 2MB 0x10000 /tmp/hello_world.bin
-esptool.py --port /dev/ttyUSB0 write-flash --flash-mode dio --flash-freq 40m --flash-size 2MB 0x1000 ESP32_GENERIC-20260824-v1.29.0.bin
-```
-
-(TODO is flash mode/freq/size/offset really needed to be explicit?)
-
-# Upload deploy script into newly installed MicroPython
-
-`mpremote` is official MicroPython tool, has more reliable data transfer (according to Gemini) and is already more popular then `ampy`.
 
 # Why MicroPython?
 
